@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "start:dev": "nodemon",
-    "build": "rimraf ./build && tsc",
+    "build": "rimraf ./dist && tsc",
     "lint": "eslint . --ext .ts",
     "lint-and-fix": "eslint . --ext .ts --fix",
-    "start": "npm run build && node build/index.js",
+    "start": "npm run build && node dist/index.js",
     "test": "jest"
   },
   "keywords": [],
@@ -19,7 +19,10 @@
     "@typescript-eslint/eslint-plugin": "^5.29.0",
     "@typescript-eslint/parser": "^5.29.0",
     "eslint": "^8.18.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
     "nodemon": "^2.0.18",
+    "prettier": "^2.7.1",
     "rimraf": "^3.0.2",
     "ts-node": "^10.8.1",
     "typescript": "^4.7.4"
