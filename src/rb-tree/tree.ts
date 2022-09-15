@@ -35,6 +35,21 @@ export class RedBlackTree<K, V = unknown> {
     this.treePrinter = new TreePrinter(this.nilNode);
   }
 
+  searchNode(key: K): URBNode<K, V> {
+    let tmp: URBNode<K, V> = this.root;
+    while (!tmp.isNil()) {
+      if (key == tmp.key) {
+        return tmp;
+      } else if (key < (tmp.key as K)) {
+        tmp = tmp.left;
+      } else {
+        tmp = tmp.right;
+      }
+    }
+
+    return this.nilNode;
+  }
+
   public getRoot(): URBNode<K, V> {
     return this.root;
   }
