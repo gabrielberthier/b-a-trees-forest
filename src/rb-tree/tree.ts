@@ -1,17 +1,38 @@
-import { SingletonNilNode as Nil } from './nil';
 import { Colors, RBNode, URBNode } from './rb-node';
+import { TreePrinter } from './tree-printer';
+
+const _nilFactory = (nilKey: string): RBNode<symbol, symbol> => {
+  const nilNode = new (class extends RBNode<symbol, symbol> {
+    constructor() {
+      super(Symbol(nilKey), Symbol(nilKey));
+      this._parent = this._left = this._right = this;
+    }
+
+    isNil(): boolean {
+      return true;
+    }
+
+    toString(): string {
+      return '·';
+    }
+
+    _details() {
+      return '(·)';
+    }
+  })();
+
+  return Object.seal(nilNode);
+};
 
 export class RedBlackTree<K, V = unknown> {
   protected root: URBNode<K, V>;
+  private treePrinter: TreePrinter<K, V>;
 
-  static readonly nilNode = Nil.getInstance();
+  readonly nilNode = _nilFactory('nilNode.key');
 
   constructor() {
-    this.root = RedBlackTree.nilNode;
-  }
-
-  isNil(node: URBNode<K, V>): boolean {
-    return node === RedBlackTree.nilNode;
+    this.root = this.nilNode;
+    this.treePrinter = new TreePrinter(this.nilNode);
   }
 
   public getRoot(): URBNode<K, V> {
@@ -20,10 +41,9 @@ export class RedBlackTree<K, V = unknown> {
 
   private rightRotate(node: URBNode<K, V>): URBNode<K, V> {
     const y = node.left;
-
     node.left = y.right;
 
-    if (!this.isNil(y.right)) {
+    if (!y.right.isNil()) {
       y.right.parent = node;
     }
 
@@ -37,7 +57,7 @@ export class RedBlackTree<K, V = unknown> {
   private leftRotate(node: URBNode<K, V>): URBNode<K, V> {
     const y = node.right;
     node.right = y.left;
-    if (!this.isNil(y.left)) {
+    if (!y.left.isNil()) {
       y.left.parent = node;
     }
 
@@ -53,31 +73,30 @@ export class RedBlackTree<K, V = unknown> {
     newChild: URBNode<K, V>
   ): void {
     const parent = node.parent;
+    if (!newChild.isNil()) {
+      newChild.parent = parent;
+    }
 
-    if (this.isNil(parent)) {
+    if (parent.isNil()) {
       this.root = newChild;
     } else {
       parent.replaceChild(node, newChild);
-
-      if (!this.isNil(newChild)) {
-        newChild.parent = parent;
-      }
     }
   }
 
   insertion(node: RBNode<K, V>): void {
-    let y: URBNode<K, V> = RedBlackTree.nilNode;
+    let y: URBNode<K, V> = this.nilNode;
     let x = this.root;
-    while (!this.isNil(x)) {
+    while (!x.isNil()) {
       const key: K = x.key as K;
       y = x;
       x = node.key < key ? x.left : x.right;
     }
-    node.left = RedBlackTree.nilNode;
-    node.right = RedBlackTree.nilNode;
-    node.parent = RedBlackTree.nilNode;
+    node.left = this.nilNode;
+    node.right = this.nilNode;
+    node.parent = this.nilNode;
 
-    if (this.isNil(y)) {
+    if (y.isNil()) {
       this.root = node;
     } else if (node.key < (y.key as K)) {
       y.left = node;
@@ -141,11 +160,15 @@ export class RedBlackTree<K, V = unknown> {
   }
 
   private inOrderHelper(node: URBNode<K, V>) {
-    if (!this.isNil(node)) {
+    if (!node.isNil()) {
       this.inOrderHelper(node.left);
       console.log(node.value.toString() + ' ');
       this.inOrderHelper(node.right);
     }
+  }
+
+  transversePreorder() {
+    console.log('ROOT:\n', this.treePrinter.traversePreOrder(this.root));
   }
 
   _details(node: URBNode<K, V>, maxLength = 20) {
@@ -155,8 +178,8 @@ export class RedBlackTree<K, V = unknown> {
     const c = node.isBlack() ? ')' : '>';
     const key = cut(node.key);
     const value = cut(node.value);
-    const left = this.isNil(node.left) ? '·' : node.left.key;
-    const right = this.isNil(node.right) ? '·' : node.right.key;
+    const left = node.left.isNil() ? '·' : node.left.key;
+    const right = node.right.isNil() ? '·' : node.right.key;
     return `${o}${cut(left)} ${key}:${value} ${cut(right)}${c}`;
   }
 }

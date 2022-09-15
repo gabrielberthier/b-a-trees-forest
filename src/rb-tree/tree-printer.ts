@@ -1,9 +1,7 @@
 import { URBNode } from './rb-node';
 
 export class TreePrinter<K, V> {
-  private sb = '';
-
-  constructor(private nil: URBNode<symbol, symbol>) {}
+  constructor(private nil: URBNode<symbol, symbol>, private sb = '') {}
 
   traverseNodes(
     padding: string,
@@ -15,7 +13,7 @@ export class TreePrinter<K, V> {
       this.sb += '\n';
       this.sb += padding;
       this.sb += pointer;
-      this.sb += node.value.toString();
+      this.sb += node.value as V;
 
       let paddingBuilder = padding;
       if (hasRightSibling) {

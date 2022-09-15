@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "command": "npm run start",
+      "name": "Run npm start",
+      "request": "launch",
+      "type": "node-terminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Program",
+      "preLaunchTask": "tsc: build - tsconfig.json",
+      "program": "${workspaceFolder}/src/main.ts",
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"]
+    }
+  ]
+}

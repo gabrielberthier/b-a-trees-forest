@@ -73,11 +73,17 @@ export class RBNode<K, V> extends Node<K, V> {
     return this === this._parent._right;
   }
 
+  isNil(): boolean {
+    return false;
+  }
+
   replaceChild(oldChild: RBNode<K, V>, newChild: RBNode<K, V>): void {
     if (oldChild.isLeftSon()) {
       this._left = newChild;
     } else if (oldChild.isRightSon()) {
       this._right = newChild;
+    } else {
+      console.log(oldChild);
     }
   }
 }
