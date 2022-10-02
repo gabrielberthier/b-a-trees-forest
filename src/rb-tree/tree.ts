@@ -38,7 +38,7 @@ export class RedBlackTree<K, V = unknown> {
   searchNode(key: K): URBNode<K, V> {
     let tmp: URBNode<K, V> = this.root;
     while (!tmp.isNil()) {
-      if (key == tmp.key) {
+      if (key === tmp.key) {
         return tmp;
       } else if (key < (tmp.key as K)) {
         tmp = tmp.left;
@@ -54,33 +54,28 @@ export class RedBlackTree<K, V = unknown> {
     return this.root;
   }
 
-  private rightRotate(node: URBNode<K, V>): URBNode<K, V> {
-    const y = node.left;
-    node.left = y.right;
-
-    if (!y.right.isNil()) {
-      y.right.parent = node;
+  rotate(node: URBNode<K, V>, moveTo: string) {
+    const side = moveTo === 'left' ? 'right' : 'left';
+    const swip = moveTo;
+    const y = node[side];
+    node[side] = y[swip];
+    if (!y[swip].isNil()) {
+      y[swip].parent = node;
     }
 
     this.replaceParentsChild(node, y);
-    y.right = node;
+    y[swip] = node;
     node.parent = y;
 
     return y;
   }
 
+  private rightRotate(node: URBNode<K, V>): URBNode<K, V> {
+    return this.rotate(node, 'right');
+  }
+
   private leftRotate(node: URBNode<K, V>): URBNode<K, V> {
-    const y = node.right;
-    node.right = y.left;
-    if (!y.left.isNil()) {
-      y.left.parent = node;
-    }
-
-    this.replaceParentsChild(node, y);
-    y.left = node;
-    node.parent = y;
-
-    return y;
+    return this.rotate(node, 'left');
   }
 
   private replaceParentsChild(
@@ -184,6 +179,36 @@ export class RedBlackTree<K, V = unknown> {
 
   transversePreorder() {
     console.log('ROOT:\n', this.treePrinter.traversePreOrder(this.root));
+  }
+
+  red_black_tree_check() {
+    return this.subtreeCheck(this.root)[0];
+  }
+
+  subtreeCheck(node: URBNode<K, V>) {
+    if (node.isNil()) return [true, 1];
+    if (node.parent.isNil() && node.isRed()) return [false, 0];
+    let countBlacks = 0;
+    if (node.isRed()) {
+      if (
+        (!node.left.isNil() && node.left.isRed()) ||
+        (!node.right.isNil() && node.right.isRed())
+      ) {
+        return [false, -1];
+      }
+    } else {
+      countBlacks = 1;
+    }
+
+    const [left, countBlacksleft] = this.subtreeCheck(node.left);
+    const [right, countBlacksRight] = this.subtreeCheck(node.right);
+
+    return [
+      Array.of(left, right, countBlacksleft === countBlacksRight).every(
+        (el) => el
+      ),
+      countBlacks + countBlacksRight
+    ];
   }
 
   _details(node: URBNode<K, V>, maxLength = 20) {
