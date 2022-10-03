@@ -1,11 +1,12 @@
-import { RBNode, RedBlackTree } from './rb-tree';
+import { RedBlackTree } from './rb-tree';
+import { NumAscendingComparator } from './rb-tree/default-comparator';
 
-const tree = new RedBlackTree<number, number>();
+const tree = new RedBlackTree<number, number>(new NumAscendingComparator());
 
 const arr = Array.from({ length: 500 }, () => Math.floor(Math.random() * 1500));
 
 for (const iterator of [1, 2, 3, 4, 5, 6, 7, 8]) {
-  tree.insertion(new RBNode<number, number>(iterator, iterator));
+  tree.insert(iterator, iterator);
 }
 
 tree.transversePreorder();

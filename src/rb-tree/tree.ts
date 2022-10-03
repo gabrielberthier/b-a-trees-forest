@@ -1,4 +1,5 @@
-import { Colors, RBNode, URBNode } from './rb-node';
+import { IComparator } from './comparator';
+import { RBNode, URBNode } from './rb-node';
 import { TreePrinter } from './tree-printer';
 
 const _nilFactory = (nilKey: string): RBNode<symbol, symbol> => {
@@ -30,17 +31,19 @@ export class RedBlackTree<K, V = unknown> {
 
   readonly nilNode = _nilFactory('nilNode.key');
 
-  constructor() {
+  constructor(private comparator: IComparator<K, V>) {
     this.root = this.nilNode;
     this.treePrinter = new TreePrinter(this.nilNode);
   }
 
   searchNode(key: K): URBNode<K, V> {
     let tmp: URBNode<K, V> = this.root;
+    const node = new RBNode<K, V>(key, undefined);
     while (!tmp.isNil()) {
-      if (key === tmp.key) {
+      const idx = this.comparator.compare(node, tmp);
+      if (idx === 0) {
         return tmp;
-      } else if (key < (tmp.key as K)) {
+      } else if (idx < 0) {
         tmp = tmp.left;
       } else {
         tmp = tmp.right;
@@ -94,33 +97,46 @@ export class RedBlackTree<K, V = unknown> {
     }
   }
 
-  insertion(node: RBNode<K, V>): void {
+  public insert(key: K, value: V): void {
+    const node = new RBNode<K, V>(key, value);
+    node.right = node.parent = node.left = this.nilNode;
+
+    this.insertion(node);
+  }
+
+  private insertion(node: RBNode<K, V>): void {
     let y: URBNode<K, V> = this.nilNode;
     let x = this.root;
     while (!x.isNil()) {
-      const key: K = x.key as K;
       y = x;
-      x = node.key < key ? x.left : x.right;
+      const comparing = this.comparator.compare(node, x);
+
+      if (comparing < 0) {
+        x = x.left;
+      } else if (comparing > 0) {
+        x = x.right;
+      } else {
+        return;
+      }
     }
-    node.left = this.nilNode;
-    node.right = this.nilNode;
-    node.parent = this.nilNode;
 
     if (y.isNil()) {
       this.root = node;
-    } else if (node.key < (y.key as K)) {
+    } else if (this.comparator.compare(node, y) < 0) {
       y.left = node;
-    } else y.right = node;
+    } else {
+      y.right = node;
+    }
 
     node.parent = y;
 
-    node.color = Colors.RED;
+    node.makeRed();
 
     this.insertionFixup(node);
   }
 
   insertionFixup(node: URBNode<K, V>): void {
-    while (node.parent.color === Colors.RED) {
+    while (node.parent.isRed()) {
       if (node.parent.isLeftSon()) {
         const y = node.parent.parent.right;
         if (y.isRed()) {
@@ -141,10 +157,10 @@ export class RedBlackTree<K, V = unknown> {
         }
       } else {
         const y = node.parent.parent.left;
-        if (y.color === Colors.RED) {
-          node.parent.color = Colors.BLACK;
-          y.color = Colors.BLACK;
-          node.parent.parent.color = Colors.RED;
+        if (y.isRed()) {
+          node.parent.makeBlack();
+          y.makeBlack();
+          node.parent.parent.makeRed();
           node = node.parent.parent;
         } else {
           if (node.isLeftSon()) {
@@ -152,15 +168,15 @@ export class RedBlackTree<K, V = unknown> {
             this.rightRotate(node);
           }
 
-          node.parent.color = Colors.BLACK;
-          node.parent.parent.color = Colors.RED;
+          node.parent.makeBlack();
+          node.parent.parent.makeRed();
 
           this.leftRotate(node.parent.parent);
         }
       }
     }
 
-    this.root.color = Colors.BLACK;
+    this.root.makeBlack();
   }
 
   // In-Order traversal
@@ -182,10 +198,10 @@ export class RedBlackTree<K, V = unknown> {
   }
 
   red_black_tree_check() {
-    return this.subtreeCheck(this.root)[0];
+    return this.subtreeCheck(this.root).reverse().pop();
   }
 
-  subtreeCheck(node: URBNode<K, V>) {
+  subtreeCheck(node: URBNode<K, V>): [boolean, number] {
     if (node.isNil()) return [true, 1];
     if (node.parent.isNil() && node.isRed()) return [false, 0];
     let countBlacks = 0;
