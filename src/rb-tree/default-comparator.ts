@@ -1,11 +1,10 @@
 import { IComparator } from './comparator';
 import { URBNode } from './rb-node';
 
+type NumNode = URBNode<number, number>;
+
 export class NumAscendingComparator implements IComparator<number, number> {
-  compare(
-    value1: URBNode<number, number>,
-    value2: URBNode<number, number>
-  ): number {
+  compare(value1: NumNode, value2: NumNode): number {
     const k1 = value1.key as number;
     const k2 = value2.key as number;
 

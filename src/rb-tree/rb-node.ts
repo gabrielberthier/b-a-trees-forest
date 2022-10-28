@@ -86,4 +86,15 @@ export class RBNode<K, V> extends Node<K, V> {
       console.log(oldChild);
     }
   }
+
+  describeSelf(): string {
+    const template = (el: URBNode<K, V>) => `
+      Key: ${el.key.toString()}, value: ${el.value.toString()}
+    `;
+
+    return (
+      `Node: ${template(this)}\n` +
+      `Left: ${template(this.left)}\nRight: ${template(this.right)}`
+    );
+  }
 }

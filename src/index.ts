@@ -5,13 +5,36 @@ const tree = new RedBlackTree<number, number>(new NumAscendingComparator());
 
 const arr = Array.from({ length: 500 }, () => Math.floor(Math.random() * 1500));
 
-for (const iterator of [1, 2, 3, 4, 5, 6, 7, 8]) {
+const testKey = 500;
+
+for (const iterator of arr) {
   tree.insert(iterator, iterator);
 }
 
 tree.transversePreorder();
-const node = tree.searchNode(2);
+const node = tree.searchNode(testKey);
 
-console.log(node);
+console.log('Search for ', testKey);
 
-console.log(tree.red_black_tree_check());
+console.log(node.describeSelf());
+
+if (tree.red_black_tree_check()) {
+  console.log('Tree is balanced');
+}
+
+// Let's test removal
+if (node.isNil()) {
+  tree.insert(testKey, testKey);
+}
+
+const nodeRemoved = tree.removeByKey(testKey);
+
+console.log(nodeRemoved.describeSelf());
+
+console.log('Node removed? ');
+
+console.log(tree.searchNode(testKey).isNil());
+
+if (tree.red_black_tree_check()) {
+  console.log('Tree is still balanced :D');
+}

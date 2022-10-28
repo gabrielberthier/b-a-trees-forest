@@ -1,29 +1,7 @@
 import { IComparator } from './comparator';
-import { RBNode, URBNode } from './rb-node';
+import { _nilFactory } from './nil-factory';
+import { Colors, RBNode, URBNode } from './rb-node';
 import { TreePrinter } from './tree-printer';
-
-const _nilFactory = (nilKey: string): RBNode<symbol, symbol> => {
-  const nilNode = new (class extends RBNode<symbol, symbol> {
-    constructor() {
-      super(Symbol(nilKey), Symbol(nilKey));
-      this._parent = this._left = this._right = this;
-    }
-
-    isNil(): boolean {
-      return true;
-    }
-
-    toString(): string {
-      return '·';
-    }
-
-    _details() {
-      return '(·)';
-    }
-  })();
-
-  return Object.seal(nilNode);
-};
 
 export class RedBlackTree<K, V = unknown> {
   protected root: URBNode<K, V>;
@@ -177,6 +155,152 @@ export class RedBlackTree<K, V = unknown> {
     }
 
     this.root.makeBlack();
+  }
+
+  removeByKey(key: K) {
+    const node = this.searchNode(key);
+    if (!node.isNil()) {
+      this.delete(node);
+    }
+
+    return node;
+  }
+
+  delete(deleteNode: URBNode<K, V>): URBNode<K, V> {
+    let replaceNode: URBNode<K, V> = this.nilNode; // track node that replaces removedOrMovedNode
+    if (!(deleteNode.isNil() || deleteNode.isNil())) {
+      let removedOrMovedNode = deleteNode; // same as deleteNode if it has only one child, and otherwise it replaces deleteNode
+
+      if (deleteNode.left.isNil()) {
+        replaceNode = deleteNode.right;
+        this.rbTreeTransplant(deleteNode, deleteNode.right);
+      } else if (deleteNode.right.isNil()) {
+        replaceNode = deleteNode.left;
+        this.rbTreeTransplant(deleteNode, deleteNode.left);
+      } else {
+        removedOrMovedNode = this.getMinimum(deleteNode.right);
+        replaceNode = removedOrMovedNode.right;
+        if (removedOrMovedNode.parent === deleteNode) {
+          replaceNode.parent = removedOrMovedNode;
+        } else {
+          this.rbTreeTransplant(removedOrMovedNode, removedOrMovedNode.right);
+          removedOrMovedNode.right = deleteNode.right;
+          removedOrMovedNode.right.parent = removedOrMovedNode;
+        }
+
+        this.rbTreeTransplant(deleteNode, removedOrMovedNode);
+        removedOrMovedNode.left = deleteNode.left;
+        removedOrMovedNode.left.parent = removedOrMovedNode;
+        removedOrMovedNode.color = deleteNode.color;
+      }
+
+      if (removedOrMovedNode.isBlack()) {
+        this.deleteRBFixup(replaceNode);
+      }
+    }
+
+    return replaceNode;
+  }
+
+  /**
+   * Restores Red-Black tree properties after delete if needed.
+   */
+  deleteRBFixup(x: URBNode<K, V>) {
+    while (x !== this.root && x.isBlack()) {
+      if (x === x.parent.left) {
+        let w = x.parent.right;
+        if (w.isRed()) {
+          // case 1 - sibling is red
+          w.makeBlack();
+          x.parent.makeRed();
+          this.leftRotate(x.parent);
+          w = x.parent.right; // converted to case 2, 3 or 4
+        }
+        // case 2 sibling is black and both of its children are black
+        if (w.left.isBlack() && w.right.isBlack()) {
+          w.makeRed();
+          x = x.parent;
+        } else if (!w.isNil()) {
+          if (w.right.isBlack()) {
+            // case 3 sibling is black and its left child is red and right child is black
+            w.left.makeBlack();
+            w.makeRed();
+            this.rightRotate(w);
+            w = x.parent.right;
+          }
+          w.color = x.parent.color; // case 4 sibling is black and right child is red
+          x.parent.makeBlack();
+          w.right.makeBlack();
+          this.leftRotate(x.parent);
+          x = this.root;
+        } else {
+          x.makeBlack();
+          x = x.parent;
+        }
+      } else {
+        let w = x.parent.left;
+        if (w.isRed()) {
+          // case 1 - sibling is red
+          w.makeBlack();
+          x.parent.makeRed();
+          this.rightRotate(x.parent);
+          w = x.parent.left; // converted to case 2, 3 or 4
+        }
+        // case 2 sibling is black and both of its children are black
+        if (w.left.isBlack() && w.right.isBlack()) {
+          w.makeRed();
+          x = x.parent;
+        } else if (!w.isNil()) {
+          if (w.left.isBlack) {
+            // case 3 sibling is black and its right child is red and left child is black
+            w.right.makeBlack();
+            w.makeRed();
+            this.leftRotate(w);
+            w = x.parent.left;
+          }
+          w.color = x.parent.color; // case 4 sibling is black and left child is red
+          x.parent.makeBlack();
+          w.left.makeBlack();
+          this.rightRotate(x.parent);
+          x = this.root;
+        } else {
+          x.makeBlack();
+          x = x.parent;
+        }
+      }
+    }
+  }
+
+  /**
+   * Similar to original transplant() method in BST but uses nilNode instead of null.
+   */
+  private rbTreeTransplant(
+    nodeToReplace: URBNode<K, V>,
+    newNode: URBNode<K, V>
+  ) {
+    if (nodeToReplace.parent.isNil()) {
+      this.root = newNode;
+    } else if (nodeToReplace == nodeToReplace.parent.left) {
+      nodeToReplace.parent.left = newNode;
+    } else {
+      nodeToReplace.parent.right = newNode;
+    }
+    newNode.parent = nodeToReplace.parent;
+    return newNode;
+  }
+
+  private getMinimum(node: URBNode<K, V>): URBNode<K, V> {
+    while (!node.left.isNil()) {
+      node = node.left;
+    }
+    return node;
+  }
+
+  private getMaximum(node: URBNode<K, V>): URBNode<K, V> {
+    while (node.right.isNil()) {
+      node = node.right;
+    }
+    return node;
   }
 
   // In-Order traversal
